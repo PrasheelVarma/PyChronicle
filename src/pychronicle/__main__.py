@@ -1,3 +1,4 @@
+import os
 import typer
 from pychronicle.tracer import start_tracing
 
@@ -9,16 +10,25 @@ def trace(script: str = typer.Argument(..., help="The path to the Python script 
     """
     Run the tracer on a target script and save the execution history to SQLite.
     """
-    print(f"🚀 Starting trace for: {script}...")
+    # PRE-FLIGHT CHECKS
+    if not os.path.exists(script):
+        typer.secho(f"❌ Error: The file '{script}' does not exist.", fg=typer.colors.RED, bold=True)
+        raise typer.Exit(code=1)
+
+    if not script.endswith(".py"):
+        typer.secho(f"❌ Error: '{script}' is not a Python file.", fg=typer.colors.RED, bold=True)
+        raise typer.Exit(code=1)
+
+    typer.secho(f"🚀 Starting trace for: {script}...", fg=typer.colors.GREEN)
     start_tracing(script)
-    print("✅ Tracing complete. Data securely logged to the database.")
+    typer.secho("✅ Tracing complete. Data securely logged to the database.", fg=typer.colors.GREEN)
 
 @app.command()
 def ui():
     """
     Launch the interactive Textual dashboard.
     """
-    print("🖥️ Launching the PyChronicle TUI...")
+    typer.secho("🖥️ Launching the PyChronicle TUI...", fg=typer.colors.CYAN)
 
     # Import inside the command so it only loads if the user asks for the UI
     from pychronicle.tui import PyChronicleApp
