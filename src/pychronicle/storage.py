@@ -1,91 +1,57 @@
-import json
 import sqlite3
-from sqlite3 import Connection
+import json
 
 DB_NAME = "pychronicle_history.db"
 
-def initialize_database() -> Connection | None:
-    """
-    Initialize the SQLite database. Creates both the variable_history
-    table (for Week 1) and the execution_log table (for Week 2).
-    """
-    try:
-        conn = sqlite3.connect(DB_NAME)
-        cursor = conn.cursor()
+def init_db():
+    """Initializes the database schema."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS execution_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp REAL,
+            line_number INTEGER,
+            file_name TEXT,
+            function_name TEXT,
+            event TEXT,
+            locals TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
 
-        # Week 1: Variable Tracking
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS variable_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp TEXT DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now')),
-                line_number INTEGER NOT NULL,
-                variable_name TEXT NOT NULL,
-                serialized_value TEXT NOT NULL
-            )
-        """)
+def log_execution(timestamp, line_number, file_name, function_name, event, locals_dict):
+    """Saves a single execution frame to the database."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
 
-        # Week 2: Execution Tracing
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS execution_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                timestamp REAL NOT NULL,
-                line_number INTEGER NOT NULL,
-                file_name TEXT NOT NULL,
-                function_name TEXT NOT NULL,
-                event TEXT NOT NULL,
-                locals TEXT NOT NULL
-            )
-        """)
+    # Serialize the locals dictionary safely
+    locals_json = json.dumps(locals_dict, default=str)
 
-        conn.commit()
-        return conn
+    cursor.execute("""
+        INSERT INTO execution_log (timestamp, line_number, file_name, function_name, event, locals)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (timestamp, line_number, file_name, function_name, event, locals_json))
 
-    except sqlite3.Error as e:
-        print(f"Database initialization failed: {e}")
-        return None
+    conn.commit()
+    conn.close()
 
-def insert_variable_state(
-    conn: Connection,
-    line_number: int,
-    variable_name: str,
-    variable_value
-) -> None:
-    """Stores variable assignment state (Week 1)."""
-    try:
-        cursor = conn.cursor()
-        serialized_value = json.dumps(variable_value)
-        cursor.execute("""
-            INSERT INTO variable_history (line_number, variable_name, serialized_value)
-            VALUES (?, ?, ?)
-        """, (line_number, variable_name, serialized_value))
-        conn.commit()
-        print(f"✓ Logged variable '{variable_name}' at line {line_number}")
-    except sqlite3.Error as e:
-        print(f"Variable insertion failed: {e}")
-
-def save_execution_state(data: dict) -> None:
-    """Stores tracer execution data (Week 2)."""
-    conn = initialize_database()
-    if not conn:
-        return
-
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO execution_log (
-                timestamp, line_number, file_name, function_name, event, locals
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (
-            data['timestamp'],
-            data['line_number'],
-            data['file_name'],
-            data['function_name'],
-            data['event'],
-            json.dumps(data['locals'])
-        ))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Execution log insertion failed: {e}")
-    finally:
-        conn.close()
+def reset_database():
+    """Wipes the execution_log table clean before a new trace starts."""
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS execution_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp REAL,
+            line_number INTEGER,
+            file_name TEXT,
+            function_name TEXT,
+            event TEXT,
+            locals TEXT
+        )
+    """)
+    cursor.execute("DELETE FROM execution_log")
+    conn.commit()
+    conn.close()
