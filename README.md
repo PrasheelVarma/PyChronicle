@@ -1,37 +1,54 @@
 # PyChronicle
 
-> A Python-based execution tracing and variable history analysis tool.
+> A Python runtime execution tracer and variable history analyzer built using `sys.settrace`, SQLite, and Textual.
 
-PyChronicle is a developer tool that helps visualize how Python programs execute by recording variable assignments and building a history of program execution. The project is being developed as part of the **Infotact Python Development Internship**.
-
-> **Current Progress:** Week 1 Completed 🚧
+PyChronicle is a developer tool that records the execution of Python programs, captures runtime state changes, and stores execution history in a SQLite database for later analysis. It is being developed as part of the **Infotact Advanced Python Development Internship**.
 
 ---
 
-## Project Overview
+## 🚀 Project Overview
 
-The goal of PyChronicle is to create a lightweight debugging and execution analysis tool capable of:
+Traditional Python debuggers execute programs one step at a time but require rerunning the program whenever a bug is missed.
 
-- Parsing Python source code using the Abstract Syntax Tree (AST)
-- Detecting variable assignments
-- Recording variable history into a SQLite database
-- Tracing program execution (upcoming)
-- Building a timeline of variable state changes (upcoming)
+PyChronicle aims to provide a lightweight **time-travel debugging** experience by:
 
----
+- Parsing Python programs
+- Tracing runtime execution
+- Recording execution history
+- Storing execution states in SQLite
+- Visualizing execution through a Terminal UI
 
-## Current Features (Week 1)
-
-- Parse Python source files using Python's `ast` module.
-- Detect variable assignments.
-- Detect annotated assignments.
-- Store assignment metadata in a SQLite database.
-- Command-line support for analyzing Python files.
-- Basic error handling for invalid input files.
+This project combines Python metaprogramming techniques such as **AST parsing**, **runtime tracing**, and **terminal-based visualization**.
 
 ---
 
-## Project Structure
+# ✨ Features
+
+## ✅ Week 1
+
+- AST-based Python source parsing
+- Variable assignment detection
+- Annotated assignment detection
+- SQLite storage layer
+- Command-line parsing support
+
+## ✅ Week 2
+
+- Runtime execution tracing using `sys.settrace`
+- Capture execution history
+- Record local variable states
+- Store execution events in SQLite
+- Terminal User Interface (Textual)
+- Timeline visualization
+- Source code viewer
+- Execution details panel
+- Stress testing utilities
+- Performance benchmarking
+- Mid-project validation tools
+
+---
+
+# 📂 Project Structure
 
 ```text
 PyChronicle/
@@ -40,25 +57,32 @@ PyChronicle/
 │   └── pychronicle/
 │       ├── __init__.py
 │       ├── parser.py
-│       └── storage.py
+│       ├── tracer.py
+│       ├── storage.py
+│       ├── tui.py
+│       └── __main__.py
 │
 ├── tests/
-│   └── test1.py
+│   ├── test1.py
+│   └── ...
+│
+├── stress_test.py
+├── benchmark.py
 │
 ├── pyproject.toml
 ├── requirements.txt
 ├── README.md
-└── pychronicle_history.db
+└── .gitignore
 ```
 
 ---
 
-## Installation
+# ⚙️ Installation
 
 Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/PrasheelVarma/PyChronicle.git
 cd PyChronicle
 ```
 
@@ -90,80 +114,187 @@ pip install -e .
 
 ---
 
-## Usage
+# ▶️ Usage
 
-Analyze a Python source file
+## Parse a Python file
 
 ```bash
 python -m pychronicle.parser tests/test1.py
 ```
 
-The parser will:
+---
 
-- Parse the source file
-- Detect variable assignments
-- Store assignment information inside the SQLite database
+## Trace program execution
+
+```bash
+python -m pychronicle stress_test.py
+```
+
+The tracer will:
+
+- Execute the target program
+- Capture runtime events
+- Record local variable states
+- Store execution history in SQLite
 
 ---
 
-## Database Schema
+## Launch the Terminal UI
 
-Current database table:
+```bash
+python -m pychronicle.tui
+```
 
-| Column | Description |
-|---------|-------------|
-| id | Primary Key |
-| timestamp | Time of insertion |
-| line_number | Line where assignment occurred |
-| variable_name | Name of the assigned variable |
-| serialized_value | Placeholder for future runtime value storage |
+The TUI allows you to:
+
+- Browse execution history
+- Inspect recorded variable states
+- Navigate execution events
+- View source code alongside execution data
 
 ---
 
-## Technologies Used
+## Run the Benchmark
+
+```bash
+python benchmark.py
+```
+
+The benchmark performs:
+
+- Database reset
+- Runtime tracing
+- Trace validation
+- Storage audit
+- Performance measurement
+
+Example output:
+
+```text
+PYCHRONICLE MID-PROJECT BENCHMARK REPORT
+
+Execution Time          : 0.08 seconds
+Execution States Logged : 1850
+Logging Rate            : 23000 states/sec
+Database Size           : 85 KB
+
+TRACE VALIDATION
+✔ Execution states captured
+✔ Variable states recorded
+✔ Execution history verified
+
+STORAGE AUDIT
+✔ SQLite storage verified
+✔ Minimal tracing overhead
+
+MID-PROJECT REVIEW STATUS : PASSED
+```
+
+---
+
+# 🗄️ Storage
+
+PyChronicle stores execution history in SQLite.
+
+Each execution event contains information such as:
+
+- Timestamp
+- Executed line number
+- File name
+- Local execution state
+- Runtime metadata
+
+This enables replaying and inspecting historical execution.
+
+---
+
+# 🧪 Testing
+
+Example test programs are available inside the `tests/` directory.
+
+Additional stress testing is provided by:
+
+```text
+stress_test.py
+```
+
+which generates a large number of execution events for validating the tracer and measuring performance.
+
+---
+
+# 🛠️ Technologies Used
 
 - Python 3
-- Abstract Syntax Tree (AST)
+- AST (`ast`)
+- Runtime Tracing (`sys.settrace`)
 - SQLite3
+- Textual
 - JSON
 - Git
 - GitHub
 
 ---
 
-## Development Roadmap
+# 📈 Development Progress
 
-### ✅ Week 1
-- [x] AST Parsing
-- [x] Variable Assignment Detection
-- [x] SQLite Integration
-- [x] Command-line File Analysis
+## ✅ Week 1
 
-### ⏳ Week 2
-- Runtime execution tracing
-- Capture variable values
-- Execution timeline
+- AST Parsing
+- Variable Assignment Detection
+- SQLite Storage
+- Command-Line Parser
 
-### ⏳ Week 3
-- Function tracing
-- Enhanced execution history
+## ✅ Week 2
+
+- Runtime Tracer
+- Execution History Recording
+- SQLite Logging
+- Terminal UI
+- Timeline Viewer
+- Benchmarking
+- Stress Testing
+- Mid-Project Validation
+
+## ⏳ Week 3
+
+- Delta-state compression
+- Optimized storage
 - Timeline improvements
+- Faster execution replay
 
-### ⏳ Week 4
-- Final integration
-- Documentation
-- Project refinement
+## ⏳ Week 4
+
+- CLI packaging
+- Watch Variables
+- Performance optimization
+- Documentation refinement
+- Final polishing
 
 ---
 
-## Author
+# 🎯 Current Status
+
+**Project Milestone**
+
+✅ Week 1 Completed
+
+✅ Week 2 Completed
+
+✅ Mid-Project Review Completed
+
+🚧 Currently progressing toward Week 3.
+
+---
+
+# 👨‍💻 Author
 
 **Prasheel Varma Datla**
 
-GitHub: https://github.com/PrasheelVarma
+GitHub:
+https://github.com/PrasheelVarma
 
 ---
 
-## License
+# 📄 License
 
-This project is currently developed for educational purposes as part of the Infotact Python Development Internship.
+This project is developed for educational and learning purposes as part of the **Infotact Advanced Python Development Internship**.
