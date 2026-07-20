@@ -127,7 +127,7 @@ python -m pychronicle.parser tests/test1.py
 ## Trace program execution
 
 ```bash
-python -m pychronicle stress_test.py
+python stress_test.py
 ```
 
 The tracer will:
@@ -171,7 +171,7 @@ The benchmark performs:
 Example output:
 
 ```text
-PYCHRONICLE MID-PROJECT BENCHMARK REPORT
+PYCHRONICLE PERFORMANCE BENCHMARK REPORT
 
 Execution Time          : 0.08 seconds
 Execution States Logged : 1850
@@ -187,7 +187,7 @@ STORAGE AUDIT
 ✔ SQLite storage verified
 ✔ Minimal tracing overhead
 
-MID-PROJECT REVIEW STATUS : PASSED
+SYSTEM BENCHMARK STATUS : SUCCESS
 ```
 
 ---

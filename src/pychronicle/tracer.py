@@ -5,6 +5,17 @@ import os
 
 from pychronicle.storage import save_execution_state
 
+def sanitize_value(val):
+    """Recursively sanitize a value to make it fully JSON-serializable."""
+    if isinstance(val, (int, float, str, bool, type(None))):
+        return val
+    elif isinstance(val, dict):
+        return {str(k): sanitize_value(v) for k, v in val.items()}
+    elif isinstance(val, (list, tuple, set)):
+        return [sanitize_value(item) for item in val]
+    else:
+        return f"<{type(val).__name__}>"
+
 def trace_callback(frame, event, arg):
     """
     Traces execution, filters out system calls, and sanitizes local variables.
@@ -14,16 +25,19 @@ def trace_callback(frame, event, arg):
 
     # FILTER: Only log lines from the specific file we are tracing
     filename = frame.f_code.co_filename
-    if "site-packages" in filename or "pychronicle" in filename:
+    if (
+        "site-packages" in filename
+        or "pychronicle" in filename
+        or "/lib/python" in filename
+        or "/usr/lib" in filename
+        or filename.startswith("<")
+    ):
         return trace_callback
 
     # SANITIZATION: Strip out non-serializable objects (functions, modules, etc.)
     clean_locals = {}
     for key, value in frame.f_locals.items():
-        if isinstance(value, (int, float, str, bool, type(None), list, dict)):
-            clean_locals[key] = value
-        else:
-            clean_locals[key] = f"<{type(value).__name__}>"
+        clean_locals[key] = sanitize_value(value)
 
     # Capture execution context
     execution_data = {

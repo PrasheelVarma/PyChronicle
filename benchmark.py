@@ -62,7 +62,7 @@ def run_benchmark():
     )
 
     print("=" * 60)
-    print("        PYCHRONICLE MID-PROJECT BENCHMARK REPORT")
+    print("        PYCHRONICLE PERFORMANCE BENCHMARK REPORT")
     print("=" * 60)
 
     print(f"Target Script           : {TARGET_SCRIPT}")
@@ -108,9 +108,9 @@ def run_benchmark():
     print("-" * 60)
 
     if row_count > 0 and unique_states > 0:
-        print("🎉 MID-PROJECT REVIEW STATUS : PASSED")
+        print("🎉 SYSTEM BENCHMARK STATUS : SUCCESS")
     else:
-        print("❌ MID-PROJECT REVIEW STATUS : NEEDS ATTENTION")
+        print("❌ SYSTEM BENCHMARK STATUS : FAILED")
 
     print("=" * 60)
 
