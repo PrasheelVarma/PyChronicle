@@ -2,8 +2,10 @@ import sys
 import runpy
 import time
 import os
-
 from pychronicle.storage import save_execution_state
+
+# Global state to track previous variables for delta compression
+_previous_locals = {}
 
 def sanitize_value(val):
     """Recursively sanitize a value to make it fully JSON-serializable."""
@@ -18,8 +20,10 @@ def sanitize_value(val):
 
 def trace_callback(frame, event, arg):
     """
-    Traces execution, filters out system calls, and sanitizes local variables.
+    Traces execution, filters out system calls, and performs Delta Compression.
     """
+    global _previous_locals
+
     if event != "line":
         return trace_callback
 
@@ -34,19 +38,28 @@ def trace_callback(frame, event, arg):
     ):
         return trace_callback
 
-    # SANITIZATION: Strip out non-serializable objects (functions, modules, etc.)
-    clean_locals = {}
+    # SANITIZATION
+    current_locals = {}
     for key, value in frame.f_locals.items():
-        clean_locals[key] = sanitize_value(value)
+        current_locals[key] = sanitize_value(value)
 
-    # Capture execution context
+    # DELTA COMPRESSION: Only store what actually changed
+    delta = {}
+    for key, val in current_locals.items():
+        if key not in _previous_locals or _previous_locals[key] != val:
+            delta[key] = val
+
+    # Update global state for the next line execution
+    _previous_locals = current_locals.copy()
+
+    # Capture execution context (saving only the delta)
     execution_data = {
         "timestamp": time.time(),
         "line_number": frame.f_lineno,
         "file_name": os.path.basename(filename),
         "function_name": frame.f_code.co_name,
         "event": event,
-        "locals": clean_locals,
+        "locals": delta,
     }
 
     # Save to database
@@ -56,6 +69,9 @@ def trace_callback(frame, event, arg):
 
 def start_tracing(target_script):
     """Enable tracing and execute the target Python file."""
+    global _previous_locals
+    _previous_locals = {}  # Reset state for a fresh trace
+
     sys.settrace(trace_callback)
     try:
         runpy.run_path(target_script, run_name="__main__")
