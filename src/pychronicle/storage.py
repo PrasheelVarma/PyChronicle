@@ -1,7 +1,31 @@
 import sqlite3
 import json
+import sys
 
 DB_NAME = "pychronicle_history.db"
+
+_active_conn = None
+
+def start_tracing_db():
+    global _active_conn
+    if _active_conn is None:
+        _active_conn = initialize_database()
+
+def stop_tracing_db(commit: bool | None = None):
+    global _active_conn
+    if _active_conn:
+        try:
+            if commit is None:
+                commit = (sys.exc_info()[0] is None)
+            if commit:
+                _active_conn.commit()
+            else:
+                _active_conn.rollback()
+        except sqlite3.Error as e:
+            print(f"Database transaction commit/rollback failed: {e}")
+        finally:
+            _active_conn.close()
+            _active_conn = None
 
 def get_connection():
     """Returns a SQLite connection configured with WAL mode for high performance."""
@@ -68,7 +92,8 @@ def insert_variable_state(conn: sqlite3.Connection, line_number: int, variable_n
 
 def save_execution_state(data: dict) -> None:
     """Stores tracer execution data (Week 2/3)."""
-    conn = initialize_database()
+    global _active_conn
+    conn = _active_conn if _active_conn else initialize_database()
     if not conn:
         return
     try:
@@ -86,11 +111,13 @@ def save_execution_state(data: dict) -> None:
             data['event'],
             json.dumps(data['locals'], default=str)
         ))
-        conn.commit()
+        if not _active_conn:
+            conn.commit()
     except sqlite3.Error as e:
         print(f"Execution log insertion failed: {e}")
     finally:
-        conn.close()
+        if not _active_conn:
+            conn.close()
 
 def init_db():
     """Initializes the database schema."""

@@ -13,6 +13,10 @@ DB_NAME = "pychronicle_history.db"
 class PyChronicleApp(App):
     """A Textual app to visualize Python execution history."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._state_cache = {}
+
     CSS = """
     Horizontal { height: 100%; }
     DataTable { width: 50%; height: 100%; border-right: vkey $accent; }
@@ -40,6 +44,7 @@ class PyChronicleApp(App):
 
     def load_database_data(self, table: DataTable) -> None:
         """Loads lightweight timeline data into the UI without hoarding memory."""
+        self._state_cache.clear()
         try:
             conn = sqlite3.connect(DB_NAME)
             cursor = conn.cursor()
@@ -60,6 +65,9 @@ class PyChronicleApp(App):
 
     def reconstruct_state_up_to(self, target_id: int) -> str:
         """Dynamically reconstructs variables up to the selected point in time."""
+        if target_id in self._state_cache:
+            return self._state_cache[target_id]
+
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
@@ -72,10 +80,16 @@ class PyChronicleApp(App):
         current_state = {}
         for row in cursor.fetchall():
             delta = json.loads(row[0])
-            current_state.update(delta)
+            for k, v in delta.items():
+                if v == "__DELETED__" or (isinstance(v, dict) and v.get("__pychronicle_deleted__") is True):
+                    current_state.pop(k, None)
+                else:
+                    current_state[k] = v
 
         conn.close()
-        return json.dumps(current_state, indent=2)
+        result_str = json.dumps(current_state, indent=2)
+        self._state_cache[target_id] = result_str
+        return result_str
 
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         row_data = event.data_table.get_row(event.row_key)
