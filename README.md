@@ -89,7 +89,7 @@ cd PyChronicle
 Create a virtual environment
 
 ```bash
-python -m venv .pc_env
+python -m venv .venv
 ```
 
 Activate the environment
@@ -97,13 +97,13 @@ Activate the environment
 ### Linux / macOS
 
 ```bash
-source .pc_env/bin/activate
+source .venv/bin/activate
 ```
 
 ### Windows
 
 ```powershell
-.pc_env\Scripts\activate
+.venv\Scripts\activate
 ```
 
 Install the project
@@ -280,7 +280,7 @@ which generates a large number of execution events for validating the tracer and
 
 ✅ Week 2 Completed
 
-✅ Mid-Project Review Completed
+⏳ Mid-Project Review (waiting)
 
 🚧 Currently progressing toward Week 3.
 

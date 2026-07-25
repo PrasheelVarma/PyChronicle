@@ -13,6 +13,10 @@ DB_NAME = "pychronicle_history.db"
 class PyChronicleApp(App):
     """A Textual app to visualize Python execution history."""
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self._state_cache = {}
+
     CSS = """
     Horizontal { height: 100%; }
     DataTable { width: 50%; height: 100%; border-right: vkey $accent; }
@@ -32,51 +36,72 @@ class PyChronicleApp(App):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.row_locals = {}
         table = self.query_one("#timeline_table", DataTable)
-        table.add_columns("Line", "File", "Function", "Event")
+        table.add_columns("ID", "Line", "File", "Function", "Event")
         table.cursor_type = "row"
         table.zebra_stripes = True
         self.load_database_data(table)
 
     def load_database_data(self, table: DataTable) -> None:
+        """Loads lightweight timeline data into the UI without hoarding memory."""
+        self._state_cache.clear()
         try:
             conn = sqlite3.connect(DB_NAME)
             cursor = conn.cursor()
+            # We fetch 'id' so we know exactly where we are in the timeline
             cursor.execute("""
-                SELECT line_number, file_name, function_name, event, locals
+                SELECT id, line_number, file_name, function_name, event
                 FROM execution_log
                 ORDER BY timestamp ASC
             """)
 
-            # RECONSTRUCT FULL STATE FROM DELTAS
-            current_state = {}
-
             for row in cursor.fetchall():
-                line_num, file, func, event, locals_json = row
-
-                # Apply the delta to our running state dictionary
-                delta = json.loads(locals_json)
-                current_state.update(delta)
-
-                # Add row to UI and save the fully reconstructed state
-                row_key = table.add_row(str(line_num), file, func, event)
-                self.row_locals[row_key] = json.dumps(current_state, indent=2)
+                row_id, line_num, file, func, event = row
+                table.add_row(str(row_id), str(line_num), file, func, event, key=str(row_id))
 
             conn.close()
         except sqlite3.Error as e:
             self.notify(f"Database error: {e}", severity="error")
 
+    def reconstruct_state_up_to(self, target_id: int) -> str:
+        """Dynamically reconstructs variables up to the selected point in time."""
+        if target_id in self._state_cache:
+            return self._state_cache[target_id]
+
+        conn = sqlite3.connect(DB_NAME)
+        cursor = conn.cursor()
+
+        # Query all deltas up to the selected row, utilizing the WAL mode speeds
+        cursor.execute("""
+            SELECT locals FROM execution_log
+            WHERE id <= ? ORDER BY timestamp ASC
+        """, (target_id,))
+
+        current_state = {}
+        for row in cursor.fetchall():
+            delta = json.loads(row[0])
+            for k, v in delta.items():
+                if v == "__DELETED__" or (isinstance(v, dict) and v.get("__pychronicle_deleted__") is True):
+                    current_state.pop(k, None)
+                else:
+                    current_state[k] = v
+
+        conn.close()
+        result_str = json.dumps(current_state, indent=2)
+        self._state_cache[target_id] = result_str
+        return result_str
+
     def on_data_table_row_highlighted(self, event: DataTable.RowHighlighted) -> None:
         row_data = event.data_table.get_row(event.row_key)
-        line_num = int(row_data[0])
-        file_name = row_data[1]
-        func_name = row_data[2]
+        row_id = int(row_data[0])
+        line_num = int(row_data[1])
+        file_name = row_data[2]
+        func_name = row_data[3]
 
-        # Grab the fully reconstructed variables from memory
-        locals_str = getattr(self, "row_locals", {}).get(event.row_key, "{}")
+        # ON-DEMAND SCRUBBING: Fetch state only when highlighted
+        locals_str = self.reconstruct_state_up_to(row_id)
 
-        # TIME-SCRUBBING UI: Read the entire file to pass to Rich Syntax
+        # Read the file for the code pane
         code_content = ""
         try:
             target_path = None
@@ -92,11 +117,11 @@ class PyChronicleApp(App):
                 with open(target_path, "r", encoding="utf-8") as f:
                     code_content = f.read()
             else:
-                code_content = f"# Could not locate source file '{file_name}' in workspace."
+                code_content = f"# Could not locate source file '{file_name}'"
         except Exception as e:
             code_content = f"# Could not read source file: {e}"
 
-        # Generate syntax highlighting and pinpoint the exact line executed
+        # Generate syntax highlighting
         syntax = Syntax(
             code_content,
             "python",
@@ -116,7 +141,6 @@ class PyChronicleApp(App):
             f"### 💻 Source Code:\n"
         )
 
-        # Render both Markdown and the Rich Syntax object together
         details_pane = self.query_one("#details_pane", Static)
         details_pane.update(Group(Markdown(details_text), syntax))
 

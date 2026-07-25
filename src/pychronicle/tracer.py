@@ -2,7 +2,7 @@ import sys
 import runpy
 import time
 import os
-from pychronicle.storage import save_execution_state
+from pychronicle.storage import save_execution_state, start_tracing_db, stop_tracing_db
 
 # Global state to track previous variables for delta compression
 _previous_locals = {}
@@ -49,6 +49,10 @@ def trace_callback(frame, event, arg):
         if key not in _previous_locals or _previous_locals[key] != val:
             delta[key] = val
 
+    for key in _previous_locals:
+        if key not in current_locals:
+            delta[key] = {"__pychronicle_deleted__": True}
+
     # Update global state for the next line execution
     _previous_locals = current_locals.copy()
 
@@ -72,11 +76,14 @@ def start_tracing(target_script):
     global _previous_locals
     _previous_locals = {}  # Reset state for a fresh trace
 
+    start_tracing_db()
+
     sys.settrace(trace_callback)
     try:
         runpy.run_path(target_script, run_name="__main__")
     finally:
         stop_tracing()
+        stop_tracing_db()
 
 def stop_tracing():
     """Disable tracing."""

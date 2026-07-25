@@ -1,15 +1,44 @@
 import sqlite3
 import json
+import sys
 
 DB_NAME = "pychronicle_history.db"
 
+_active_conn = None
+
+def start_tracing_db():
+    global _active_conn
+    if _active_conn is None:
+        _active_conn = initialize_database()
+
+def stop_tracing_db(commit: bool | None = None):
+    global _active_conn
+    if _active_conn:
+        try:
+            if commit is None:
+                commit = (sys.exc_info()[0] is None)
+            if commit:
+                _active_conn.commit()
+            else:
+                _active_conn.rollback()
+        except sqlite3.Error as e:
+            print(f"Database transaction commit/rollback failed: {e}")
+        finally:
+            _active_conn.close()
+            _active_conn = None
+
+def get_connection():
+    """Returns a SQLite connection configured with WAL mode for high performance."""
+    conn = sqlite3.connect(DB_NAME)
+    # Enable Write-Ahead Logging (WAL) for faster concurrent writes and reads
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    return conn
+
 def initialize_database() -> sqlite3.Connection | None:
-    """
-    Initialize the SQLite database. Creates both the variable_history
-    table (for Week 1) and the execution_log table (for Week 2).
-    """
+    """Initialize SQLite tables and performance indexes for Week 3 storage."""
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_connection()
         cursor = conn.cursor()
 
         # Week 1: Variable Tracking
@@ -23,7 +52,7 @@ def initialize_database() -> sqlite3.Connection | None:
             )
         """)
 
-        # Week 2: Execution Tracing
+        # Week 2 & 3: Execution Tracing with Delta Storage
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS execution_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -36,19 +65,19 @@ def initialize_database() -> sqlite3.Connection | None:
             )
         """)
 
+        # Performance Index: Speeds up chronological querying in the TUI
+        cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_execution_timestamp
+            ON execution_log (timestamp ASC);
+        """)
+
         conn.commit()
         return conn
-
     except sqlite3.Error as e:
         print(f"Database initialization failed: {e}")
         return None
 
-def insert_variable_state(
-    conn: sqlite3.Connection,
-    line_number: int,
-    variable_name: str,
-    variable_value
-) -> None:
+def insert_variable_state(conn: sqlite3.Connection, line_number: int, variable_name: str, variable_value) -> None:
     """Stores variable assignment state (Week 1)."""
     try:
         cursor = conn.cursor()
@@ -58,16 +87,15 @@ def insert_variable_state(
             VALUES (?, ?, ?)
         """, (line_number, variable_name, serialized_value))
         conn.commit()
-        print(f"✓ Logged variable '{variable_name}' at line {line_number}")
     except sqlite3.Error as e:
         print(f"Variable insertion failed: {e}")
 
 def save_execution_state(data: dict) -> None:
-    """Stores tracer execution data (Week 2)."""
-    conn = initialize_database()
+    """Stores tracer execution data (Week 2/3)."""
+    global _active_conn
+    conn = _active_conn if _active_conn else initialize_database()
     if not conn:
         return
-
     try:
         cursor = conn.cursor()
         cursor.execute("""
@@ -83,11 +111,13 @@ def save_execution_state(data: dict) -> None:
             data['event'],
             json.dumps(data['locals'], default=str)
         ))
-        conn.commit()
+        if not _active_conn:
+            conn.commit()
     except sqlite3.Error as e:
         print(f"Execution log insertion failed: {e}")
     finally:
-        conn.close()
+        if not _active_conn:
+            conn.close()
 
 def init_db():
     """Initializes the database schema."""
@@ -106,7 +136,7 @@ def log_execution(timestamp, line_number, file_name, function_name, event, local
 
 def reset_database():
     """Wipes the execution_log table clean before a new trace starts."""
-    conn = sqlite3.connect(DB_NAME)
+    conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS execution_log (
@@ -122,4 +152,3 @@ def reset_database():
     cursor.execute("DELETE FROM execution_log")
     conn.commit()
     conn.close()
-
