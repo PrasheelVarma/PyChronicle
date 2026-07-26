@@ -44,7 +44,23 @@ This project combines Python metaprogramming techniques such as **AST parsing**,
 - Execution details panel
 - Stress testing utilities
 - Performance benchmarking
-- Mid-project validation tools
+
+## ✅ Week 3
+
+- Delta-state compression for runtime storage
+- Store only changed variables between execution states
+- Automatic deleted-variable detection
+- Dynamic execution state reconstruction
+- Optimized timeline scrubbing
+- SQLite WAL (Write-Ahead Logging) optimization
+- Database indexing for faster replay
+- Transaction-based tracing writes
+- On-demand execution state loading
+- State reconstruction cache
+- Improved benchmark reporting
+- Optimized replay performance
+- Reduced storage overhead
+- Faster execution replay
 
 ---
 
@@ -127,30 +143,32 @@ python -m pychronicle.parser tests/test1.py
 ## Trace program execution
 
 ```bash
-python stress_test.py
+python -m pychronicle trace stress_test.py
 ```
 
 The tracer will:
 
 - Execute the target program
 - Capture runtime events
-- Record local variable states
-- Store execution history in SQLite
+- Record variable state changes
+- Store delta-compressed execution history in SQLite
 
 ---
 
 ## Launch the Terminal UI
 
 ```bash
-python -m pychronicle.tui
+python -m pychronicle ui
 ```
 
 The TUI allows you to:
 
 - Browse execution history
-- Inspect recorded variable states
+- Scrub through execution timelines
+- Inspect reconstructed variable states
 - Navigate execution events
 - View source code alongside execution data
+- Highlight the exact historical execution line
 
 ---
 
@@ -164,28 +182,28 @@ The benchmark performs:
 
 - Database reset
 - Runtime tracing
-- Trace validation
+- Delta compression validation
+- Replay performance measurement
 - Storage audit
-- Performance measurement
+- Database size analysis
 
 Example output:
 
 ```text
-PYCHRONICLE PERFORMANCE BENCHMARK REPORT
+============================================================
+        PYCHRONICLE PERFORMANCE BENCHMARK REPORT
+============================================================
 
-Execution Time          : 0.08 seconds
-Execution States Logged : 1850
-Logging Rate            : 23000 states/sec
-Database Size           : 85 KB
+Execution Write Time
+State Replay Fetch Time
+Execution Deltas Logged
+Tracing Throughput
+Compressed Database Size
 
-TRACE VALIDATION
-✔ Execution states captured
-✔ Variable states recorded
-✔ Execution history verified
+WEEK 3 DELTA-COMPRESSION AUDIT
 
-STORAGE AUDIT
-✔ SQLite storage verified
-✔ Minimal tracing overhead
+Timeline Reconstruction
+Variable Delta Recording
 
 SYSTEM BENCHMARK STATUS : SUCCESS
 ```
@@ -201,10 +219,13 @@ Each execution event contains information such as:
 - Timestamp
 - Executed line number
 - File name
-- Local execution state
-- Runtime metadata
+- Function name
+- Runtime event
+- Delta-compressed local variable state
 
-This enables replaying and inspecting historical execution.
+Instead of storing the complete execution state after every line, PyChronicle stores only the variables that changed. During timeline navigation, the application dynamically reconstructs the complete execution state by replaying recorded deltas.
+
+This significantly reduces storage usage while maintaining accurate historical replay.
 
 ---
 
@@ -218,7 +239,13 @@ Additional stress testing is provided by:
 stress_test.py
 ```
 
-which generates a large number of execution events for validating the tracer and measuring performance.
+which generates a large number of execution events for validating:
+
+- Runtime tracing
+- Delta compression
+- Timeline reconstruction
+- Database performance
+- Replay speed
 
 ---
 
@@ -229,6 +256,7 @@ which generates a large number of execution events for validating the tracer and
 - Runtime Tracing (`sys.settrace`)
 - SQLite3
 - Textual
+- Typer
 - JSON
 - Git
 - GitHub
@@ -255,20 +283,26 @@ which generates a large number of execution events for validating the tracer and
 - Stress Testing
 - Mid-Project Validation
 
-## ⏳ Week 3
+## ✅ Week 3
 
-- Delta-state compression
-- Optimized storage
-- Timeline improvements
-- Faster execution replay
+- Delta Compression
+- Delta State Storage
+- Execution State Reconstruction
+- Timeline Scrubbing
+- Database Optimization
+- WAL Storage Optimization
+- Transaction-based Logging
+- Replay Optimization
+- Performance Improvements
+- Benchmark Enhancements
 
 ## ⏳ Week 4
 
-- CLI packaging
+- CLI Packaging
 - Watch Variables
-- Performance optimization
-- Documentation refinement
-- Final polishing
+- Performance Optimization
+- Documentation Refinement
+- Final Polishing
 
 ---
 
@@ -282,7 +316,9 @@ which generates a large number of execution events for validating the tracer and
 
 ⏳ Mid-Project Review (waiting)
 
-🚧 Currently progressing toward Week 3.
+✅ Week 3 Completed
+
+🚧 Preparing for Week 4 Development
 
 ---
 
@@ -291,6 +327,7 @@ which generates a large number of execution events for validating the tracer and
 **Prasheel Varma Datla**
 
 GitHub:
+
 https://github.com/PrasheelVarma
 
 ---
