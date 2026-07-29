@@ -151,5 +151,30 @@ class TestWatchEngine(unittest.TestCase):
         self.assertEqual(history[0]["value"], 42)
         self.assertEqual(history[1]["value"], 99)
 
+    def test_multiple_watched_variables(self):
+        # Test watching multiple variables simultaneously
+        self.engine.add_watch("x")
+        self.engine.add_watch("y")
+        self.engine.add_watch("z")
+        
+        history_x = self.engine.get_watch_history("x")
+        history_y = self.engine.get_watch_history("y")
+        history_z = self.engine.get_watch_history("z")
+        
+        # x starts at 10, updates to 20, gets deleted, and recreated with 30
+        self.assertEqual(len(history_x), 4)
+        self.assertEqual(history_x[0]["value"], 10)
+        self.assertEqual(history_x[1]["value"], 20)
+        self.assertTrue(history_x[2]["is_deleted"])
+        self.assertEqual(history_x[3]["value"], 30)
+        
+        # y is hello
+        self.assertEqual(len(history_y), 1)
+        self.assertEqual(history_y[0]["value"], "hello")
+        
+        # z starts at 100
+        self.assertEqual(len(history_z), 1)
+        self.assertEqual(history_z[0]["value"], 100)
+
 if __name__ == "__main__":
     unittest.main()
