@@ -45,7 +45,17 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(result.exit_code, 1)
         self.assertIn("does not exist", result.stdout)
 
-
+    def test_trace_invalid_extension(self):
+        # Create a temp file without .py suffix
+        fd, temp_file = tempfile.mkstemp(suffix=".txt")
+        os.close(fd)
+        try:
+            result = self.runner.invoke(app, ["trace", temp_file])
+            self.assertEqual(result.exit_code, 1)
+            self.assertIn("is not a Python file", result.stdout)
+        finally:
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
 
     def test_trace_success(self):
         # Create a simple python script in current directory
