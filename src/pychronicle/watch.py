@@ -84,7 +84,7 @@ class WatchEngine:
             """)
 
             timeline = []
-            for row in cursor.fetchall():
+            for row in cursor:
                 row_id, ts, line_num, file_name, func_name, event, locals_str = row
                 try:
                     delta = json.loads(locals_str)

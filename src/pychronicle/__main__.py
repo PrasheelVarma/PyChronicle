@@ -50,14 +50,6 @@ def trace(script: str = typer.Argument(..., help="Path to the Python script.")):
         )
         raise typer.Exit(code=1)
 
-    if not script.endswith(".py"):
-        typer.secho(
-            f"❌ Error: '{script}' is not a Python file.",
-            fg=typer.colors.RED,
-            bold=True,
-        )
-        raise typer.Exit(code=1)
-
     typer.secho("🧹 Cleaning previous trace data...", fg=typer.colors.YELLOW)
     reset_database()
 

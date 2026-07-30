@@ -296,13 +296,22 @@ class PyChronicleApp(App):
         code_content = ""
         try:
             target_path = None
+            if not hasattr(self, "_file_path_cache"):
+                self._file_path_cache = {}
+
             if os.path.exists(file_name):
                 target_path = file_name
             else:
-                for root, dirs, files in os.walk("."):
-                    if file_name in files:
-                        target_path = os.path.join(root, file_name)
-                        break
+                if file_name not in self._file_path_cache:
+                    found_path = None
+                    for root, dirs, files in os.walk("."):
+                        dirs[:] = [d for d in dirs if d not in (".git", "node_modules", "venv", ".venv", "__pycache__", "site-packages")]
+                        if file_name in files:
+                            found_path = os.path.join(root, file_name)
+                            break
+                    self._file_path_cache[file_name] = found_path
+                
+                target_path = self._file_path_cache.get(file_name)
 
             if target_path:
                 with open(target_path, "r", encoding="utf-8") as f:
