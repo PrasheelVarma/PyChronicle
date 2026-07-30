@@ -7,14 +7,27 @@ from pychronicle.storage import save_execution_state, start_tracing_db, stop_tra
 # Global state to track previous variables for delta compression
 _previous_locals = {}
 
-def sanitize_value(val):
+def sanitize_value(val, seen=None):
     """Recursively sanitize a value to make it fully JSON-serializable."""
+    if seen is None:
+        seen = set()
+
+    val_id = id(val)
+    if val_id in seen:
+        return f"<CircularReference to {type(val).__name__}>"
+
     if isinstance(val, (int, float, str, bool, type(None))):
         return val
     elif isinstance(val, dict):
-        return {str(k): sanitize_value(v) for k, v in val.items()}
+        seen.add(val_id)
+        res = {str(k): sanitize_value(v, seen) for k, v in val.items()}
+        seen.remove(val_id)
+        return res
     elif isinstance(val, (list, tuple, set)):
-        return [sanitize_value(item) for item in val]
+        seen.add(val_id)
+        res = [sanitize_value(item, seen) for item in val]
+        seen.remove(val_id)
+        return res
     else:
         return f"<{type(val).__name__}>"
 
@@ -29,13 +42,13 @@ def trace_callback(frame, event, arg):
 
     # FILTER: Only log lines from the specific file we are tracing
     filename = frame.f_code.co_filename
-    if (
-        "site-packages" in filename
-        or "pychronicle" in filename
-        or "/lib/python" in filename
-        or "/usr/lib" in filename
-        or filename.startswith("<")
-    ):
+    if filename.startswith("<"):
+        return trace_callback
+    if "site-packages" in filename or "/lib/python" in filename or "/usr/lib" in filename:
+        return trace_callback
+    
+    tracer_dir = os.path.dirname(os.path.abspath(__file__))
+    if os.path.abspath(filename).startswith(tracer_dir):
         return trace_callback
 
     # SANITIZATION
