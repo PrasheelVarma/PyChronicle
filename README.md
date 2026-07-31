@@ -1,68 +1,58 @@
 # PyChronicle
 
-> A Python runtime execution tracer and variable history analyzer built using `sys.settrace`, SQLite, and Textual.
+> A Python runtime execution tracer, variable history analyzer, and lightweight time-travel debugging tool built using `sys.settrace`, SQLite, Textual, and Typer.
 
-PyChronicle is a developer tool that records the execution of Python programs, captures runtime state changes, and stores execution history in a SQLite database for later analysis. It is being developed as part of the **Infotact Advanced Python Development Internship**.
+PyChronicle is a Python developer tool that records the execution of Python programs, captures runtime state changes, and stores execution history inside a SQLite database for later analysis.
 
----
+Unlike traditional debugging, where developers often need to rerun a program after missing a bug, PyChronicle preserves the execution history so that previous execution states can be explored through an interactive terminal interface.
 
-## 🚀 Project Overview
-
-Traditional Python debuggers execute programs one step at a time but require rerunning the program whenever a bug is missed.
-
-PyChronicle aims to provide a lightweight **time-travel debugging** experience by:
-
-- Parsing Python programs
-- Tracing runtime execution
-- Recording execution history
-- Storing execution states in SQLite
-- Visualizing execution through a Terminal UI
-
-This project combines Python metaprogramming techniques such as **AST parsing**, **runtime tracing**, and **terminal-based visualization**.
+This project is being developed as part of the **Infotact Advanced Python Development Internship**.
 
 ---
 
-# ✨ Features
+# 🚀 Project Overview
 
-## ✅ Week 1
+Traditional Python debugging techniques such as print statements and debuggers only expose the **current execution state** of a program.
 
-- AST-based Python source parsing
-- Variable assignment detection
-- Annotated assignment detection
-- SQLite storage layer
-- Command-line parsing support
+If a bug is missed or the program finishes execution, the developer generally has to execute the program again.
 
-## ✅ Week 2
+PyChronicle approaches debugging differently.
 
-- Runtime execution tracing using `sys.settrace`
-- Capture execution history
-- Record local variable states
-- Store execution events in SQLite
-- Terminal User Interface (Textual)
-- Timeline visualization
-- Source code viewer
-- Execution details panel
-- Stress testing utilities
-- Performance benchmarking
+Instead of only showing the current state, it continuously records execution history while the program is running. After execution completes, the recorded history can be replayed to inspect how variables changed over time.
 
-## ✅ Week 3
+The complete workflow is:
 
-- Delta-state compression for runtime storage
-- Store only changed variables between execution states
-- Automatic deleted-variable detection
-- Dynamic execution state reconstruction
-- Optimized timeline scrubbing
-- SQLite WAL (Write-Ahead Logging) optimization
-- Database indexing for faster replay
-- Transaction-based tracing writes
-- On-demand execution state loading
-- State reconstruction cache
-- Improved benchmark reporting
-- Optimized replay performance
-- Reduced storage overhead
-- Faster execution replay
+```text
+Python Script
+      │
+      ▼
+AST Parser
+      │
+      ▼
+Runtime Tracer (sys.settrace)
+      │
+      ▼
+SQLite Storage
+      │
+      ▼
+State Reconstruction
+      │
+      ▼
+Interactive Terminal UI (Textual)
+```
+
+PyChronicle combines several advanced Python concepts including:
+
+- Abstract Syntax Tree (AST) Parsing
+- Runtime Execution Tracing
+- SQLite Database Storage
+- Delta State Compression
+- Dynamic State Reconstruction
+- Terminal User Interface Development
+- Python CLI Packaging
 
 ---
+<Features>
 
 # 📂 Project Structure
 
@@ -72,18 +62,24 @@ PyChronicle/
 ├── src/
 │   └── pychronicle/
 │       ├── __init__.py
+│       ├── __main__.py
 │       ├── parser.py
 │       ├── tracer.py
 │       ├── storage.py
 │       ├── tui.py
-│       └── __main__.py
+│       └── watch.py
 │
 ├── tests/
-│   ├── test1.py
-│   └── ...
+│   ├── test_cli.py
+│   ├── test_database.py
+│   ├── test_timeline.py
+│   ├── test_tracing.py
+│   ├── test_watch.py
+│   └── test1.py
 │
-├── stress_test.py
 ├── benchmark.py
+├── stress_test.py
+├── test_script.py
 │
 ├── pyproject.toml
 ├── requirements.txt
@@ -95,34 +91,34 @@ PyChronicle/
 
 # ⚙️ Installation
 
-Clone the repository
+Clone the repository:
 
 ```bash
 git clone https://github.com/PrasheelVarma/PyChronicle.git
 cd PyChronicle
 ```
 
-Create a virtual environment
+Create a virtual environment:
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment
+Activate the virtual environment.
 
-### Linux / macOS
+Linux / macOS
 
 ```bash
 source .venv/bin/activate
 ```
 
-### Windows
+Windows
 
 ```powershell
 .venv\Scripts\activate
 ```
 
-Install the project
+Install the project:
 
 ```bash
 pip install -e .
@@ -130,122 +126,206 @@ pip install -e .
 
 ---
 
-# ▶️ Usage
+# ▶️ Execution Workflow
 
-## Parse a Python file
+## Step 1 — Verify Installation
 
 ```bash
-python -m pychronicle.parser tests/test1.py
+pychronicle --help
+```
+
+Displays the available command-line interface commands.
+
+---
+
+## Step 2 — Check Installed Version
+
+```bash
+pychronicle --version
+```
+
+Displays the installed PyChronicle version.
+
+---
+
+## Step 3 — Prepare the Python Program
+
+Create or modify a Python file (for example `test_script.py`) that you want to analyze.
+
+Example:
+
+```python
+def calculate_total(price, quantity):
+    total = price * quantity
+    return total
+
+name = "Laptop"
+price = 500
+quantity = 2
+
+total = calculate_total(price, quantity)
+
+discount = 50
+final_price = total - discount
+
+for i in range(3):
+    final_price += 10
+
+status = "Expensive"
+
+if final_price < 1000:
+    status = "Affordable"
+
+print(name)
+print(final_price)
+print(status)
 ```
 
 ---
 
-## Trace program execution
+## Step 4 — Trace Program Execution
 
 ```bash
-python -m pychronicle trace stress_test.py
+pychronicle trace test_script.py
 ```
 
-The tracer will:
+This command automatically:
 
-- Execute the target program
-- Capture runtime events
-- Record variable state changes
-- Store delta-compressed execution history in SQLite
+- Clears any previous execution history
+- Executes the target Python program
+- Records runtime execution events
+- Captures local variable changes
+- Stores execution history inside SQLite
 
 ---
 
-## Launch the Terminal UI
+## Step 5 — Launch the Interactive Terminal UI
 
 ```bash
-python -m pychronicle ui
+pychronicle ui
 ```
 
-The TUI allows you to:
+The Terminal UI allows you to:
 
-- Browse execution history
-- Scrub through execution timelines
-- Inspect reconstructed variable states
+- Browse the execution timeline
+- Inspect reconstructed local variables
+- View watched variables
 - Navigate execution events
-- View source code alongside execution data
-- Highlight the exact historical execution line
+- View source code
+- Highlight the currently executing line
 
 ---
 
-## Run the Benchmark
+## Step 6 — Performance Benchmark (Optional)
 
 ```bash
 python benchmark.py
 ```
 
-The benchmark performs:
+Measures:
 
-- Database reset
-- Runtime tracing
-- Delta compression validation
-- Replay performance measurement
-- Storage audit
-- Database size analysis
+- Tracing performance
+- Replay performance
+- Database size
+- Storage efficiency
+- Delta compression effectiveness
 
-Example output:
+---
 
-```text
-============================================================
-        PYCHRONICLE PERFORMANCE BENCHMARK REPORT
-============================================================
+## Step 7 — Stress Testing (Optional)
 
-Execution Write Time
-State Replay Fetch Time
-Execution Deltas Logged
-Tracing Throughput
-Compressed Database Size
-
-WEEK 3 DELTA-COMPRESSION AUDIT
-
-Timeline Reconstruction
-Variable Delta Recording
-
-SYSTEM BENCHMARK STATUS : SUCCESS
+```bash
+python stress_test.py
 ```
+
+Validates the tracer and storage system under larger execution workloads.
 
 ---
 
 # 🗄️ Storage
 
-PyChronicle stores execution history in SQLite.
+PyChronicle stores execution history inside a SQLite database.
 
-Each execution event contains information such as:
+Each execution event records information such as:
 
 - Timestamp
 - Executed line number
-- File name
+- Source file name
 - Function name
 - Runtime event
 - Delta-compressed local variable state
 
-Instead of storing the complete execution state after every line, PyChronicle stores only the variables that changed. During timeline navigation, the application dynamically reconstructs the complete execution state by replaying recorded deltas.
+Instead of storing the complete runtime state after every executed line, PyChronicle stores **only the variables that changed** between execution steps.
 
-This significantly reduces storage usage while maintaining accurate historical replay.
+When the user navigates through the execution timeline, the complete program state is reconstructed dynamically by replaying the recorded variable deltas.
+
+This approach significantly reduces storage usage while maintaining accurate historical replay.
+
+SQLite optimizations implemented include:
+
+- WAL (Write-Ahead Logging)
+- Database indexing
+- Transaction batching
+- Delta-state reconstruction cache
 
 ---
 
 # 🧪 Testing
 
-Example test programs are available inside the `tests/` directory.
+PyChronicle includes multiple ways to validate the correctness and performance of the project.
 
-Additional stress testing is provided by:
+## Automated Tests
 
-```text
-stress_test.py
+Run the automated test suite:
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
-which generates a large number of execution events for validating:
+The automated tests validate the major components of the project, including:
+
+- Command Line Interface
+- Database operations
+- Runtime tracing
+- Timeline reconstruction
+- Watch Variables engine
+
+---
+
+## Performance Benchmark
+
+Run:
+
+```bash
+python benchmark.py
+```
+
+The benchmark measures:
+
+- Runtime tracing speed
+- Execution replay performance
+- Database size
+- Storage efficiency
+- Delta compression effectiveness
+- Timeline reconstruction performance
+
+---
+
+## Stress Testing
+
+Run:
+
+```bash
+python stress_test.py
+```
+
+The stress test executes larger workloads to verify:
 
 - Runtime tracing
-- Delta compression
-- Timeline reconstruction
-- Database performance
-- Replay speed
+- Database stability
+- Replay correctness
+- Storage performance
+- Reconstruction accuracy
 
 ---
 
@@ -257,6 +337,7 @@ which generates a large number of execution events for validating:
 - SQLite3
 - Textual
 - Typer
+- unittest
 - JSON
 - Git
 - GitHub
@@ -269,56 +350,108 @@ which generates a large number of execution events for validating:
 
 - AST Parsing
 - Variable Assignment Detection
-- SQLite Storage
-- Command-Line Parser
+- SQLite Storage Layer
+- Command Line Parser
+
+---
 
 ## ✅ Week 2
 
-- Runtime Tracer
+- Runtime Tracing using `sys.settrace`
 - Execution History Recording
 - SQLite Logging
-- Terminal UI
-- Timeline Viewer
-- Benchmarking
+- Terminal User Interface
+- Timeline Visualization
+- Source Code Viewer
+- Benchmark Utility
 - Stress Testing
-- Mid-Project Validation
+
+---
 
 ## ✅ Week 3
 
-- Delta Compression
-- Delta State Storage
-- Execution State Reconstruction
-- Timeline Scrubbing
-- Database Optimization
-- WAL Storage Optimization
-- Transaction-based Logging
-- Replay Optimization
+- Delta State Compression
+- Dynamic State Reconstruction
+- Timeline Replay Optimization
+- SQLite WAL Optimization
+- Database Indexing
+- Transaction-based Storage
 - Performance Improvements
-- Benchmark Enhancements
 
-## ⏳ Week 4
+---
+
+## 🚧 Week 4 (In Progress)
+
+Completed:
 
 - CLI Packaging
-- Watch Variables
-- Performance Optimization
+- Watch Variables Engine
+- Watch Variables Integration
+- Professional Package Structure
+- Automated Unit Tests
+
+Currently Working On:
+
+- Final Stability Verification
+- End-to-End Testing
 - Documentation Refinement
-- Final Polishing
+- Final Project Review
 
 ---
 
 # 🎯 Current Status
 
-**Project Milestone**
+## Project Status
 
-✅ Week 1 Completed
+- ✅ Week 1 Completed
+- ✅ Week 2 Completed
+- ⏳ Mid Review (Awaiting Evaluation)
+- ✅ Week 3 Completed
+- 🚧 Week 4 In Progress
 
-✅ Week 2 Completed
+---
 
-⏳ Mid-Project Review (waiting)
+## Current Focus
 
-✅ Week 3 Completed
+The current focus is completing the remaining Week 4 activities:
 
-🚧 Preparing for Week 4 Development
+- Final stability verification
+- End-to-end testing
+- Documentation refinement
+- Final project polishing
+
+Once these activities are completed, PyChronicle will be ready for the internship's final review and project submission.
+
+---
+
+# 📚 Project Learning Outcomes
+
+Through this project, the following concepts have been explored and implemented:
+
+- Python Abstract Syntax Tree (AST)
+- Python Runtime Tracing (`sys.settrace`)
+- SQLite Database Design
+- Delta-State Compression
+- Dynamic State Reconstruction
+- Terminal UI Development using Textual
+- Python CLI Packaging using Typer
+- Automated Software Testing
+- Performance Benchmarking
+- Stress Testing
+- Software Project Organization
+
+---
+
+# 🚀 Future Improvements
+
+Some enhancements that can be explored beyond the internship include:
+
+- Search and filtering within execution history
+- Exporting execution sessions
+- Breakpoint support
+- Multiple trace session management
+- Enhanced timeline visualization
+- Advanced debugging analytics
 
 ---
 
@@ -334,4 +467,4 @@ https://github.com/PrasheelVarma
 
 # 📄 License
 
-This project is developed for educational and learning purposes as part of the **Infotact Advanced Python Development Internship**.
+This project is being developed for educational purposes as part of the **Infotact Advanced Python Development Internship**.
