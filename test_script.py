@@ -1,25 +1,12 @@
-def calculate_total(price, quantity):
-    total = price * quantity
-    return total
+x = 10
+y = 20
 
+z = x + y
 
-name = "Laptop"
-price = 500
-quantity = 2
+x = 100
 
-total = calculate_total(price, quantity)
+del y
 
-discount = 50
-final_price = total - discount
+name = "PyChronicle"
 
-for i in range(3):
-    final_price += 10
-
-status = "Expensive"
-
-if final_price < 1000:
-    status = "Affordable"
-
-print(name)
-print(final_price)
-print(status)
+x = x + 50
