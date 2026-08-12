@@ -6,7 +6,7 @@ import typer
 from pychronicle.storage import reset_database
 from pychronicle.tracer import start_tracing
 
-VERSION = "0.1.0"
+VERSION = "1.0.0"
 
 
 def version_callback(value: bool):
