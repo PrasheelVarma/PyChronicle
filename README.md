@@ -450,4 +450,6 @@ https://github.com/PrasheelVarma
 
 # 📄 License
 
-This project is being developed for educational purposes as part of the **Infotact Advanced Python Development Internship**.
+PyChronicle is licensed under the **MIT License**.
+
+See the [`LICENSE`](LICENSE) file for the full license text.
